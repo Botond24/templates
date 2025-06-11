@@ -1,1 +1,0 @@
-#Rust Public Server Template

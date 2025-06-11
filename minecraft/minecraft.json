@@ -279,44 +279,34 @@
       "type": "writefile",
       "text": "eula=${eula}",
       "target": "eula.txt"
+    },
+    {
+      "type": "command",
+      "commands": [
+        "wget https://github.com/timvisee/lazymc/releases/download/v0.2.11/lazymc-v0.2.11-linux-x64 -o lazymc",
+        "chmod a+x ./lazymc",
+        "./lazymc config generate",
+        "grep -zo '\\[config\\].*' lazymc.toml > lazymc.toml.bak"
+      ]
+    },
+    {
+      "type": "writefile",
+      "text": "# lazymc configuration\n#\n# You must configure your server directory and start command, see:\n# - server.directory\n# - server.command\n#\n# All defaults are commented out, change it if you desire.\n# You can probably leave the rest as-is.\n#\n# You may generate a new configuration with: lazymc config generate\n# Or find the latest at: https://git.io/J1Fvq\n\n[public]\n# Public address. IP and port users connect to.\n# Shows sleeping status, starts server on connect, and proxies to server.\naddress = \"0.0.0.0:${port}\"\n\n# Server version & protocol hint.\n# Sent to clients until actual server version is known.\n# See: https://git.io/J1Fvx\n#version = \"1.20.3\"\n#protocol = 765\n\n[server]\n# Server address. Internal IP and port of server started by lazymc to proxy to.\n# Port must be different from public port.\naddress = \"127.0.0.1:{innerport}\"\n\n# Server directory, defaults to current directory.\ndirectory = \".\"\n\n# Command to start the server.\n# Warning: if using a bash script read: https://git.io/JMIKH\ncommand = \"{command}\"\n\n# Freeze the server process instead of restarting it when no players online, making it resume faster.\n# Only works on Unix (Linux or MacOS), ignored on Windows\n#freeze_process = true\n\n# Immediately wake server when starting lazymc.\n#wake_on_start = false\n\n# Immediately wake server after crash.\n#wake_on_crash = false\n\n# Probe required server details when starting lazymc, wakes server on start.\n# Improves client compatibility. Automatically enabled if required by other config properties.\n#probe_on_start = false\n\n# Set to true if this server runs Forge.\nforge = ${isforge}\n\n# Server start/stop timeout in seconds. Force kill server process if it takes too long.\n#start_timeout = 300\n#stop_timeout = 150\n\n# To wake server, user must be in server whitelist if enabled on server.\n#wake_whitelist = true\n\n# Block banned IPs as listed in banned-ips.json in server directory.\nblock_banned_ips = true\n\n# Drop connections from banned IPs.\n# Banned IPs won't be able to ping or request server status.\n# On connect, clients show a 'Disconnected' message rather than the ban reason.\ndrop_banned_ips = true\n\n[time]\n# Sleep after number of seconds.\nsleep_after = 60\n\n# Minimum time in seconds to stay online when server is started.\nminimum_online_time = 60\n\n[motd]\n# MOTD, shown in server browser.\nsleeping = \"☠ Server is sleeping\n§2☻ Join to start it up\"\nstarting = \"§2☻ Server is starting...\n§7⌛ Please wait...\"\nstopping = \"☠ Server going to sleep...\n⌛ Please wait...\"\n\n# Use MOTD from Minecraft server once known.\nfrom_server = true\n\n[join]\nmethods = [\n    \"hold\",\n#    \"kick\",\n]\n\n[join.kick]\n# Kick occupation method.\n# Instantly kicks a client with a message.\n\n# Message shown when client is kicked while server is starting/stopping.\n#starting = \"Server is starting... §c♥§r\n\nThis may take some time.\n\nPlease try to reconnect in a minute.\"\n#stopping = \"Server is going to sleep... §7☠§r\n\nPlease try to reconnect in a minute to wake it again.\"\n\n[join.hold]\n# Hold occupation method.\n# Holds back a joining client while the server is started until it is ready.\n# 'Connecting the server...' is shown on the client while it's held back.\n# If the server starts fast enough, the client won't notice it was sleeping at all.\n# This works for a limited time of 30 seconds, after which the Minecraft client times out.\n\n# Hold client for number of seconds on connect while server starts.\n# Keep below Minecraft timeout of 30 seconds.\ntimeout = 25\n\n[join.forward]\n\n\n[join.lobby]\n\n\n[lockout]\n#enabled = false\n#message = \"Server is closed §7☠§r\n\nPlease try to reconnect in a minute.\"\n\n[rcon]\n\n\n[advanced]\n\n\n",
+      "target": "lazymc.toml"
+    },
+    {
+      "type": "command",
+      "commands": [
+        "cat lazymc.toml.bak >> lazymc.toml",
+        "rm lazymc.toml.bak",
+        "sed -i \"s/{innerport}/$((${port}+30))/g\" lazymc.toml"
+      ]
     }
   ],
   "run": {
     "command": [
       {
-        "command": "java${javaversion} -Xmx${memory}M -Dterminal.jline=false -Dterminal.ansi=true -Dlog4j2.formatMsgNoLookups=true ${jvmArgs} -jar fabric-server-launch.jar nogui",
-        "if": "env == 'host' && file_exists('fabric-server-launch.jar')"
-      },
-      {
-        "command": "java -Xmx${memory}M -Dterminal.jline=false -Dterminal.ansi=true -Dlog4j2.formatMsgNoLookups=true ${jvmArgs} -jar fabric-server-launch.jar nogui",
-        "if": "env != 'host' && file_exists('fabric-server-launch.jar')"
-      },
-      {
-        "command": "java${javaversion} -Xmx${memory}M -Dterminal.jline=false -Dterminal.ansi=true -Dlog4j2.formatMsgNoLookups=true ${jvmArgs} -jar server.jar nogui",
-        "if": "env == 'host' && file_exists('server.jar')"
-      },
-      {
-        "command": "java -Xmx${memory}M -Dterminal.jline=false -Dterminal.ansi=true -Dlog4j2.formatMsgNoLookups=true ${jvmArgs} -jar server.jar nogui",
-        "if": "env != 'host' && file_exists('server.jar')"
-      },
-      {
-        "command": "java${javaversion} -Xmx${memory}M -Dterminal.jline=false -Dterminal.ansi=true -Dlog4j2.formatMsgNoLookups=true ${jvmArgs} @libraries/net/minecraftforge/forge/${resolvedForgeVersion}/win_args.txt nogui",
-        "if": "env == 'host' && modlauncher == 'forge' && os == 'windows' && file_exists('libraries/net/minecraftforge/forge/' + resolvedForgeVersion + '/win_args.txt')"
-      },
-      {
-        "command": "java${javaversion} -Xmx${memory}M -Dterminal.jline=false -Dterminal.ansi=true -Dlog4j2.formatMsgNoLookups=true ${jvmArgs} @libraries/net/minecraftforge/forge/${resolvedForgeVersion}/unix_args.txt nogui",
-        "if": "env == 'host' && modlauncher == 'forge' && file_exists('libraries/net/minecraftforge/forge/' + resolvedForgeVersion + '/unix_args.txt')"
-      },
-      {
-        "command": "java -Xmx${memory}M -Dterminal.jline=false -Dterminal.ansi=true -Dlog4j2.formatMsgNoLookups=true ${jvmArgs} @libraries/net/minecraftforge/forge/${resolvedForgeVersion}/win_args.txt nogui",
-        "if": "env != 'host' && modlauncher == 'forge' && os == 'windows' && file_exists('libraries/net/minecraftforge/forge/' + resolvedForgeVersion + '/win_args.txt')"
-      },
-      {
-        "command": "java -Xmx${memory}M -Dterminal.jline=false -Dterminal.ansi=true -Dlog4j2.formatMsgNoLookups=true ${jvmArgs} @libraries/net/minecraftforge/forge/${resolvedForgeVersion}/unix_args.txt nogui",
-        "if": "env != 'host' && modlauncher == 'forge' && file_exists('libraries/net/minecraftforge/forge/' + resolvedForgeVersion+ '/unix_args.txt')"
-      },
-      {
-        "command": "java -Xmx${memory}M -Dterminal.jline=false -Dterminal.ansi=true -Dlog4j2.formatMsgNoLookups=true ${jvmArgs} -jar server.jar nogui"
+        "command": "./lazymc start"
       }
     ],
     "pre": [
@@ -326,7 +316,52 @@
           "minecraftVersion": "${version}",
           "version": "${forgebuild}",
           "outputVariable": "resolvedForgeVersion"
+      },
+      {
+        "type": "command",
+        "commands": "sed 's/command.?=.*/java${javaversion} -Xmx${memory}M -Dterminal.jline=false -Dterminal.ansi=true -Dlog4j2.formatMsgNoLookups=true ${jvmArgs} -jar fabric-server-launch.jar nogui/g'",
+        "if": "env == 'host' && file_exists('fabric-server-launch.jar')"
+      },
+      {
+        "type": "command",
+        "commands": "sed 's/java -Xmx${memory}M -Dterminal.jline=false -Dterminal.ansi=true -Dlog4j2.formatMsgNoLookups=true ${jvmArgs} -jar fabric-server-launch.jar nogui/g'",
+        "if": "env != 'host' && file_exists('fabric-server-launch.jar')"
+      },
+      {
+        "type": "command",
+        "commands": "sed 's/java${javaversion} -Xmx${memory}M -Dterminal.jline=false -Dterminal.ansi=true -Dlog4j2.formatMsgNoLookups=true ${jvmArgs} -jar server.jar nogui/g'",
+        "if": "env == 'host' && file_exists('server.jar')"
+      },
+      {
+        "type": "command",
+        "commands": "sed 's/java -Xmx${memory}M -Dterminal.jline=false -Dterminal.ansi=true -Dlog4j2.formatMsgNoLookups=true ${jvmArgs} -jar server.jar nogui/g'",
+        "if": "env != 'host' && file_exists('server.jar')"
+      },
+      {
+        "type": "command",
+        "commands": "sed 's/java${javaversion} -Xmx${memory}M -Dterminal.jline=false -Dterminal.ansi=true -Dlog4j2.formatMsgNoLookups=true ${jvmArgs} @libraries/net/minecraftforge/forge/${resolvedForgeVersion}/win_args.txt nogui/g'",
+        "if": "env == 'host' && modlauncher == 'forge' && os == 'windows' && file_exists('libraries/net/minecraftforge/forge/' + resolvedForgeVersion + '/win_args.txt')"
+      },
+      {
+        "type": "command",
+        "commands": "sed 's/java${javaversion} -Xmx${memory}M -Dterminal.jline=false -Dterminal.ansi=true -Dlog4j2.formatMsgNoLookups=true ${jvmArgs} @libraries/net/minecraftforge/forge/${resolvedForgeVersion}/unix_args.txt nogui/g'",
+        "if": "env == 'host' && modlauncher == 'forge' && file_exists('libraries/net/minecraftforge/forge/' + resolvedForgeVersion + '/unix_args.txt')"
+      },
+      {
+        "type": "command",
+        "commands": "sed 's/java -Xmx${memory}M -Dterminal.jline=false -Dterminal.ansi=true -Dlog4j2.formatMsgNoLookups=true ${jvmArgs} @libraries/net/minecraftforge/forge/${resolvedForgeVersion}/win_args.txt nogui/g'",
+        "if": "env != 'host' && modlauncher == 'forge' && os == 'windows' && file_exists('libraries/net/minecraftforge/forge/' + resolvedForgeVersion + '/win_args.txt')"
+      },
+      {
+        "type": "command",
+        "commands": "sed 's/java -Xmx${memory}M -Dterminal.jline=false -Dterminal.ansi=true -Dlog4j2.formatMsgNoLookups=true ${jvmArgs} @libraries/net/minecraftforge/forge/${resolvedForgeVersion}/unix_args.txt nogui/g'",
+        "if": "env != 'host' && modlauncher == 'forge' && file_exists('libraries/net/minecraftforge/forge/' + resolvedForgeVersion+ '/unix_args.txt')"
+      },
+      {
+        "type": "command",
+        "commands": "sed 's/java -Xmx${memory}M -Dterminal.jline=false -Dterminal.ansi=true -Dlog4j2.formatMsgNoLookups=true ${jvmArgs} -jar server.jar nogui/g'"
       }
+
     ],
     "stop": "stop",
     "stdin": {
